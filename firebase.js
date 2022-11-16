@@ -8,7 +8,7 @@ import
     getFirestore, serverTimestamp, collection, addDoc, getDocs, setDoc, doc, onSnapshot, orderBy, query
 } from "firebase/firestore";
 // import {...} from "firebase/functions";
-// import {...} from "firebase/storage";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Initialize Firebase
 
@@ -35,7 +35,7 @@ const db = getFirestore(app);
 // Initialize Firebase Authentication and get a reference to the service
 const auth = getAuth(app);
 
-export { db, auth, collection, addDoc, getDocs, createUserWithEmailAndPassword, updateProfile, signInWithEmailAndPassword, serverTimestamp, setDoc, doc,  onSnapshot, orderBy, query }
+export { db, auth, collection, addDoc, getDocs, createUserWithEmailAndPassword, updateProfile, signInWithEmailAndPassword, serverTimestamp, setDoc, doc, onSnapshot, orderBy, query, getStorage, ref, uploadBytes, getDownloadURL }
 
 // For more information on how to access Firebase in your project,
 // see the Firebase documentation: https://firebase.google.com/docs/web/setup#access-firebase

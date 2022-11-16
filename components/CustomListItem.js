@@ -1,31 +1,17 @@
 import { StyleSheet, } from 'react-native'
 import { Avatar, ListItem, Text } from '@rneui/themed'
 import { useEffect, useState } from 'react';
-import { collection, db, query, orderBy, onSnapshot } from '../firebase'
-const CustomListItem = ({ id, chatName, enterChat }) =>
+import { collection, db, query, orderBy, onSnapshot, auth } from '../firebase'
+import getRecipientEmail from '../utils/getRecipientEmail';
+const CustomListItem = ({ id, chatName, enterChat, users }) =>
 {
+
     const [chatMessages, setChatMessages] = useState([])
-    useEffect(() =>
-    {
-        let unsubscribe;
-        const liveUpdate = async () =>
-        {
-            const messagesRef = collection(db, "chats", id, "messages")
-            const queryObj = query(messagesRef, orderBy("timestamp", 'desc'));
-            unsubscribe = onSnapshot(queryObj, (querySnapshot) =>
-            {
-
-                setChatMessages(querySnapshot.docs.map((doc) => ({ ...doc.data() })
-                ));
-
-            });
-        }
-        liveUpdate()
-        return unsubscribe;
-    }, [chatMessages])
+    
+ 
 
     return (
-        <ListItem key={id} bottomDivider onPress={() => enterChat(id, chatName)}>
+        <ListItem key={id} bottomDivider onPress={() => enterChat(id, chatName, users)}>
             <Avatar
                 rounded
                 source={{
@@ -34,7 +20,7 @@ const CustomListItem = ({ id, chatName, enterChat }) =>
             />
             <ListItem.Content >
                 <ListItem.Title style={{ fontWeight: "800" }}>
-                    {chatName}
+                    {getRecipientEmail(users, auth.currentUser.email) || chatName}
                 </ListItem.Title>
                 <ListItem.Subtitle
                     numberOfLines={1}

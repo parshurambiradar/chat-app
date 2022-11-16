@@ -1,42 +1,45 @@
 import { useIsFocused, useNavigation } from '@react-navigation/native'
-import { Avatar } from '@rneui/themed'
+import { Avatar, Badge } from '@rneui/themed'
 import { useEffect, useLayoutEffect, useState } from 'react'
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Platform, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { } from 'react-native-safe-area-context'
 import CustomListItem from '../components/CustomListItem'
-import { auth, db, collection, getDocs } from '../firebase'
+import { auth, db, collection, getDocs, onSnapshot, query, orderBy } from '../firebase'
 import { AntDesign, SimpleLineIcons } from '@expo/vector-icons'
+import { where } from 'firebase/firestore'
+import getRecipientEmail from '../utils/getRecipientEmail'
 const HomeScreen = () =>
 {
     const navigation = useNavigation();
     const [chats, setChats] = useState([])
+
     const isFocused = useIsFocused()
-    useLayoutEffect(() =>
+
+    useEffect(() =>
     {
-        (async () =>
-        {
-            try
-            {
-                if (isFocused)
-                {
-                    const querySnapshot = await getDocs(collection(db, "chats"));
+        const unsub = onSnapshot(
+            query(
+                collection(
+                    db,
+                    'chats'
 
-                    setChats(querySnapshot.docs.map((doc) => ({
+                ),
+                where('users', 'array-contains', auth.currentUser.email),
+
+            ),
+            (snapshot) =>
+            {
+                setChats(
+                    snapshot.docs.map((doc) => ({
                         id: doc.id,
-                        data: doc.data()
-                    })))
-                }
-            } catch (err)
-            {
-                console.log(err)
+                        data: doc.data(),
+                    }))
+                );
             }
-        })()
+        );
+        return unsub;
 
-
-        
-
-
-    }, [isFocused])
+    }, [])
 
     useLayoutEffect(() =>
     {
@@ -48,9 +51,15 @@ const HomeScreen = () =>
             headerLeft: () => (<View style={{ marginLeft: 20 }}>
                 <TouchableOpacity activeOpacity={0.5} onPress={signOutUser}>
                     <Avatar
+                        title={auth.currentUser.displayName}
                         rounded
                         source={{ uri: auth.currentUser.photoURL || 'https://st4.depositphotos.com/4329009/19956/v/600/depositphotos_199564354-stock-illustration-creative-vector-illustration-default-avatar.jpg' }} />
+
                 </TouchableOpacity>
+                <Text
+                numberOfLines={1}
+                    style={{ position: 'absolute', top: 5, left: 40, fontSize: Platform.OS === 'android' ? 8 : 10 }}>{auth.currentUser.displayName}</Text>
+
             </View>),
             headerRight: () =>
             (
@@ -77,17 +86,18 @@ const HomeScreen = () =>
     {
         auth.signOut().then(() => navigation.replace("Login"))
     }
-    const enterChat = (id, chatName) =>
+    const enterChat = (id, chatName, users) =>
     {
-        navigation.navigate('Chat', { chatName, id })
+
+        navigation.navigate('Chat', { chatName: getRecipientEmail(users, auth.currentUser.email) || chatName, id, })
     }
 
     return (
         <SafeAreaView>
             <ScrollView style={styles.container}>
                 {
-                    chats.map(({ id, data: { chatName } }) => (
-                        <CustomListItem key={id} id={id} chatName={chatName} enterChat={enterChat} />
+                    chats.map(({ id, data: { chatName, users } }) => (
+                        <CustomListItem key={id} id={id} users={users} chatName={chatName} enterChat={enterChat} />
                     ))
                 }
             </ScrollView>
