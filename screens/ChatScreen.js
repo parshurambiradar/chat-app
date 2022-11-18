@@ -1,12 +1,14 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Avatar, Image, Input, Text } from '@rneui/themed';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, TouchableWithoutFeedback } from 'react-native'
-import { FontAwesome, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
+import { Keyboard, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, TouchableWithoutFeedback, Linking, Alert } from 'react-native'
+import { FontAwesome, Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons'
 import { addDoc, db, serverTimestamp, auth, doc, collection, onSnapshot, orderBy, query, ref, uploadBytes, getStorage, getDownloadURL } from '../firebase'
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
-
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import * as MediaLibrary from 'expo-media-library';
 
 const ChatScreen = () =>
 {
@@ -46,8 +48,8 @@ const ChatScreen = () =>
                     {/* <TouchableOpacity>
                         <FontAwesome name='video-camera' size={24} color="white" />
                     </TouchableOpacity> */}
-                    <TouchableOpacity>
-                        <Ionicons name='call' size={24} color="white" />
+                    <TouchableOpacity onPress={pickDocument}>
+                        <FontAwesome5 name='file-upload' size={24} color="white" />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={pickImage}>
                         <Ionicons name='attach' size={24} color="white" />
@@ -93,8 +95,66 @@ const ChatScreen = () =>
     //     }
     // }
 
+    // const downloadFile = async (uri, filename) =>
+    // {
+    //     try
+    //     {
+    //         let fileUri = FileSystem.documentDirectory + filename;
+    //         console.log(uri,filename)
+    //         let downloadPath = await FileSystem.downloadAsync(uri, fileUri)
+    //         const { status } = await MediaLibrary.requestPermissionsAsync();
+
+    //         if (status === "granted")
+    //         {
+    //             const asset = await MediaLibrary.createAssetAsync(downloadPath.uri);
+
+    //             await MediaLibrary.createAlbumAsync("Download", asset, false);
+    //             Alert.alert("Success", "Image was successfully downloaded!");
+    //         }
+    //     } catch (error)
+    //     {
+    //         console.log(error)
+    //     }
+    // }
 
 
+
+    const pickDocument = async () =>
+    {
+        try
+        {
+            let result = await DocumentPicker.getDocumentAsync({
+                // type: "application/pdf",
+            });
+            console.log(result)
+            if (result !== null)
+            {
+
+                let type = result.mimeType.split('/')[0]
+                let uri = result.uri
+                let filename = uri.split("/");
+                filename = filename[filename.length - 1];
+                const r = await fetch(uri);
+                const b = await r.blob();
+
+                uri = uri.substring(uri.lastIndexOf('/') + 1);
+
+                // create a file ref
+                const fileRef = ref(getStorage(), uri);
+
+                //upload image to firebase storage 
+                await uploadBytes(fileRef, b,);
+
+                //get image url
+                let fileurl = await getDownloadURL(fileRef);
+                //save image url as text in message field
+                await sendMessage(fileurl, type, filename)
+            }
+        } catch (error)
+        {
+            console.log(error)
+        }
+    };
 
     const pickImage = async () =>
     {
@@ -104,7 +164,7 @@ const ChatScreen = () =>
             let result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.All,
                 allowsEditing: true,
-                aspect: [4, 3],
+                aspect: [5, 4],
                 quality: 1,
             });
 
@@ -113,6 +173,9 @@ const ChatScreen = () =>
             if (!result.canceled)
             {
                 let source = result?.assets[0]?.uri;
+                let type = result?.assets[0]?.type || 'image';
+                let filename = source.split("/");
+                filename = filename[filename.length - 1];
                 const response = await fetch(source);
                 let blob = await response.blob();
                 // remove last slash from local file path
@@ -127,17 +190,18 @@ const ChatScreen = () =>
                 //get image url
                 let fileurl = await getDownloadURL(fileRef);
                 //save image url as text in message field
-                await sendMessage(fileurl)
+                await sendMessage(fileurl, type, filename)
             }
         } catch (error)
         {
             console.log(error)
         }
     };
-    const sendMessage = async (fileurl = null) =>
+    const sendMessage = async (fileurl = null, type = 'text', filename = undefined) =>
     {
         try
         {
+
 
             await addDoc(
                 collection(
@@ -148,6 +212,8 @@ const ChatScreen = () =>
                 ),
                 {
                     message: fileurl || input,
+                    type: type,
+                    filename: filename,
                     timestamp: serverTimestamp(),
                     email: auth.currentUser.email,
                     username: auth.currentUser.displayName,
@@ -162,8 +228,8 @@ const ChatScreen = () =>
             console.log(error);
         } finally
         {
-            Keyboard.dismiss()
-            setInput("");
+            input && Keyboard.dismiss()
+            input && setInput("");
         }
 
     };
@@ -228,96 +294,86 @@ const ChatScreen = () =>
                             onContentSizeChange={() => scrollViewRef.current.scrollToEnd({ animated: true })}
                         >
                             {/* {chat goes here} */}
-                            {messages.map(({ id, data: { message, email, photoURL, username, timestamp } }) => (
-                                email === auth.currentUser.email ? (
-                                    <View>
-                                        {
-                                            message.startsWith('https://firebasestorage.googleapis.com') ?
-                                                <View style={[styles.reciever, { backgroundColor: '#fff' }]}>
-                                                    <Avatar
-                                                        rounded
-                                                        //web
-                                                        containerStyle={{
-                                                            position: 'absolute',
-                                                            bottom: -15,
-                                                            right: -5
-                                                        }}
-                                                        position='absolute'
-                                                        bottom={-15}
-                                                        right={-5}
-                                                        source={{ uri: photoURL }}
-                                                    />
-                                                    <Image source={{ uri: message }} style={{ width: 200, height: 200, }} />
-                                                </View>
-                                                :
-                                                <View key={id} style={styles.reciever}>
-                                                    <Avatar
-                                                        rounded
-                                                        //web
-                                                        containerStyle={{
-                                                            position: 'absolute',
-                                                            bottom: -15,
-                                                            right: -5
-                                                        }}
-                                                        position='absolute'
-                                                        bottom={-15}
-                                                        right={-5}
-                                                        source={{ uri: photoURL }}
-                                                    />
-                                                    <Text style={styles.recieverText}>{message}</Text
-                                                    >
-                                                </View>
-                                        }
+                            {messages.map(({ id, data: { message, email, photoURL, filename, username, timestamp, type } }) =>
+                            {
+                                let reciever = email === auth.currentUser.email ? true : false;
+                                let msg;
+                                switch (type)
+                                {
+                                    case 'image':
+                                        msg = <Image
+                                           
+                                            source={{ uri: message }} style={{ width: 200, height: 200, }} />
 
+                                        break;
+                                    case 'application':
+
+                                        msg = <View
+
+                                            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                                        >
+                                            <Text
+                                                onPress={async () =>
+                                                {
+                                                    let res = await Linking.canOpenURL(message)
+                                                    if (res)
+                                                    {
+                                                        Linking.openURL(message)
+                                                    }
+                                                }}
+                                                numberOfLines={3}
+                                                style={[styles[reciever ? 'recieverText' : 'senderText'], { width: '80%' }]}>{filename}</Text>
+                                            {/* {
+                                                !reciever && <MaterialCommunityIcons
+                                                    onPress={() => downloadFile(message, filename)}
+                                                    name='download-circle-outline' size={30} color='white' />} */}
+                                        </View>
+                                        break;
+
+                                    default: msg = <Text selectable style={styles[reciever ? 'recieverText' : 'senderText']}>{message}</Text>
+
+
+                                        break;
+                                }
+
+                                return (
+                                    <View key={id} style={styles[reciever ? 'reciever' : 'sender']}>
+                                        {reciever ? <Avatar
+                                            rounded
+                                            //web
+                                            containerStyle={{
+                                                position: 'absolute',
+                                                bottom: -15,
+                                                right: -5,
+                                            }}
+                                            position='absolute'
+                                            bottom={-15}
+                                            right={5}
+
+
+                                            source={{ uri: photoURL }}
+                                        /> : <Avatar
+                                            rounded
+                                            //web
+                                            containerStyle={{
+                                                position: 'absolute',
+                                                bottom: -15,
+                                                left: -5,
+                                            }}
+                                            position='absolute'
+                                            bottom={-15}
+                                            left={5}
+                                            source={{ uri: photoURL }}
+                                        />}
+                                        {msg}
                                     </View>
 
 
-                                ) : (
-
-                                    <View>
-                                        {
-                                            message.startsWith('https://firebasestorage.googleapis.com') ?
-                                                <View style={[styles.sender, { backgroundColor: '#fff', }]}>
-                                                    <Avatar
-                                                        rounded
-                                                        //web
-                                                        containerStyle={{
-                                                            position: 'absolute',
-                                                            bottom: -15,
-                                                            left: -5
-                                                        }}
-                                                        position='absolute'
-                                                        bottom={-15}
-                                                        left={-5}
-                                                        source={{ uri: photoURL }}
-                                                    />
-                                                    <Image source={{ uri: message }} style={{ width: 200, height: 200, }} />
-                                                </View>
-                                                :
-
-                                                <View key={id} style={styles.sender}>
-                                                    <Avatar
-                                                        rounded
-                                                        //web
-                                                        containerStyle={{
-                                                            position: 'absolute',
-                                                            bottom: -15,
-                                                            left: -5
-                                                        }}
-                                                        position='absolute'
-                                                        bottom={-15}
-                                                        left={-5}
-                                                        source={{ uri: photoURL }}
-                                                    />
-                                                    <Text style={styles.senderText} >{message}</Text>
-                                                </View>
-                                        }
 
 
 
-                                    </View>
                                 )
-                            ))}
+                            })}
 
                         </ScrollView>
 
