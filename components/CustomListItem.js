@@ -3,15 +3,15 @@ import { Avatar, ListItem, Text } from '@rneui/themed'
 import { useEffect, useState } from 'react';
 import { collection, db, query, orderBy, onSnapshot, auth } from '../firebase'
 import getRecipientEmail from '../utils/getRecipientEmail';
-const CustomListItem = ({ id, chatName, enterChat, users }) =>
+const CustomListItem = ({ id, chatName, enterChat, users, }) =>
 {
 
     const [chatMessages, setChatMessages] = useState([])
-    
- 
+
+
 
     return (
-        <ListItem key={id} bottomDivider onPress={() => enterChat(id, chatName, users)}>
+        <ListItem key={id} bottomDivider onPress={() => enterChat(id, chatName, users,)}>
             <Avatar
                 rounded
                 source={{

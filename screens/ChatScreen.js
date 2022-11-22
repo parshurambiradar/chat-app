@@ -162,7 +162,7 @@ const ChatScreen = () =>
         {
 
             let result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.All,
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
                 aspect: [5, 4],
                 quality: 1,
@@ -202,7 +202,19 @@ const ChatScreen = () =>
         try
         {
 
+            let doc = {
+                message: fileurl || input,
+                type: type,
 
+                timestamp: serverTimestamp(),
+                email: auth.currentUser.email,
+                username: auth.currentUser.displayName,
+                photoURL: auth.currentUser.photoURL
+            }
+            if (filename)
+            {
+                doc.filename = filename
+            }
             await addDoc(
                 collection(
                     db,
@@ -210,15 +222,7 @@ const ChatScreen = () =>
                     id,
                     "messages"
                 ),
-                {
-                    message: fileurl || input,
-                    type: type,
-                    filename: filename,
-                    timestamp: serverTimestamp(),
-                    email: auth.currentUser.email,
-                    username: auth.currentUser.displayName,
-                    photoURL: auth.currentUser.photoURL
-                }
+                doc
             );
 
 
@@ -260,6 +264,11 @@ const ChatScreen = () =>
         return unsub;
 
     }, []);
+
+    const openChat = () =>
+    {
+        
+    }
     // useLayoutEffect(() =>
     // {
     //     let unsubscribe;
@@ -302,8 +311,10 @@ const ChatScreen = () =>
                                 {
                                     case 'image':
                                         msg = <Image
-                                           
-                                            source={{ uri: message }} style={{ width: 200, height: 200, }} />
+
+                                            source={{ uri: message }}
+                                            style={{ width: 200, height: 200, }}
+                                        />
 
                                         break;
                                     case 'application':
@@ -340,6 +351,7 @@ const ChatScreen = () =>
                                     <View key={id} style={styles[reciever ? 'reciever' : 'sender']}>
                                         {reciever ? <Avatar
                                             rounded
+                                            
                                             //web
                                             containerStyle={{
                                                 position: 'absolute',
@@ -354,6 +366,7 @@ const ChatScreen = () =>
                                             source={{ uri: photoURL }}
                                         /> : <Avatar
                                             rounded
+                                            onPress={openChat}
                                             //web
                                             containerStyle={{
                                                 position: 'absolute',
@@ -382,13 +395,15 @@ const ChatScreen = () =>
                                 placeholder='Signal Message' style={styles.textInput}
                                 value={input}
                                 onChangeText={text => setInput(text)}
-                                onSubmitEditing={() => sendMessage()}
+                                onSubmitEditing={() => input && sendMessage()}
 
                             />
-                            <TouchableOpacity activeOpacity={0.5}
-                                onPress={() => sendMessage()}
+                            <TouchableOpacity
+                                disabled={!input}
+                                activeOpacity={0.5}
+                                onPress={() => input && sendMessage()}
                             >
-                                <Ionicons name='send' size={24} color='#2B68E6' />
+                                <Ionicons name='send' size={24} color={!input ? 'grey' : '#2B68E6'} />
                             </TouchableOpacity>
                         </View>
                     </>

@@ -57,7 +57,7 @@ const HomeScreen = () =>
 
                 </TouchableOpacity>
                 <Text
-                numberOfLines={1}
+                    numberOfLines={1}
                     style={{ position: 'absolute', top: 5, left: 40, fontSize: Platform.OS === 'android' ? 8 : 10 }}>{auth.currentUser.displayName}</Text>
 
             </View>),
@@ -96,7 +96,7 @@ const HomeScreen = () =>
         <SafeAreaView>
             <ScrollView style={styles.container}>
                 {
-                    chats.map(({ id, data: { chatName, users } }) => (
+                    chats.map(({ id, data: { chatName, users, } }) => (
                         <CustomListItem key={id} id={id} users={users} chatName={chatName} enterChat={enterChat} />
                     ))
                 }
