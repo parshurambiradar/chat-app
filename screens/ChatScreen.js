@@ -1,7 +1,7 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Avatar, Image, Input, Text } from '@rneui/themed';
+import { Avatar, Image, Input, Text, Tab, TabView, SearchBar } from '@rneui/themed';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, TouchableWithoutFeedback, Linking, Alert } from 'react-native'
+import { Keyboard, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, TouchableWithoutFeedback, Linking, Alert, FlatList } from 'react-native'
 import { FontAwesome, Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons'
 import { addDoc, db, serverTimestamp, auth, doc, collection, onSnapshot, orderBy, query, ref, uploadBytes, getStorage, getDownloadURL } from '../firebase'
 import { StatusBar } from 'expo-status-bar';
@@ -9,6 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
+import { format } from 'date-fns';
 
 const ChatScreen = () =>
 {
@@ -17,7 +18,11 @@ const ChatScreen = () =>
     console.log(chatName, id, email, photoURL)
     const [input, setInput] = useState('')
     const [messages, setMessages] = useState([])
+
+
     const scrollViewRef = useRef()
+
+
     useLayoutEffect(() =>
     {
         navigation.setOptions({
@@ -60,6 +65,8 @@ const ChatScreen = () =>
 
 
     }, [navigation, messages])
+
+
 
     // const sendMessage = async () =>
     // {
@@ -267,7 +274,7 @@ const ChatScreen = () =>
 
     const openChat = () =>
     {
-        
+
     }
     // useLayoutEffect(() =>
     // {
@@ -298,9 +305,13 @@ const ChatScreen = () =>
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
 
                     <>
+
+
+
                         <ScrollView contentContainerStyle={{ paddingTop: 15 }}
                             ref={scrollViewRef}
                             onContentSizeChange={() => scrollViewRef.current.scrollToEnd({ animated: true })}
+
                         >
                             {/* {chat goes here} */}
                             {messages.map(({ id, data: { message, email, photoURL, filename, username, timestamp, type } }) =>
@@ -349,9 +360,9 @@ const ChatScreen = () =>
 
                                 return (
                                     <View key={id} style={styles[reciever ? 'reciever' : 'sender']}>
-                                        {reciever ? <Avatar
+                                        {/* {reciever ? <Avatar
                                             rounded
-                                            
+
                                             //web
                                             containerStyle={{
                                                 position: 'absolute',
@@ -377,8 +388,11 @@ const ChatScreen = () =>
                                             bottom={-15}
                                             left={5}
                                             source={{ uri: photoURL }}
-                                        />}
+                                        />} */}
+
                                         {msg}
+                                        {timestamp && <Text style={{ color: !reciever ? 'white' : 'black', alignSelf: 'flex-end', paddingTop: 2, marginLeft: 5 }}>{format(new Date(timestamp?.toDate()), 'hh:mm a')}</Text>}
+
                                     </View>
 
 
@@ -387,7 +401,6 @@ const ChatScreen = () =>
 
                                 )
                             })}
-
                         </ScrollView>
 
                         <View style={styles.footer}>
@@ -398,14 +411,21 @@ const ChatScreen = () =>
                                 onSubmitEditing={() => input && sendMessage()}
 
                             />
-                            <TouchableOpacity
+                            {input && <TouchableOpacity
                                 disabled={!input}
                                 activeOpacity={0.5}
-                                onPress={() => input && sendMessage()}
+                                onPress={() => sendMessage()}
                             >
                                 <Ionicons name='send' size={24} color={!input ? 'grey' : '#2B68E6'} />
-                            </TouchableOpacity>
+                            </TouchableOpacity>}
                         </View>
+
+
+
+
+
+
+
                     </>
                 </TouchableWithoutFeedback>
 
@@ -427,16 +447,16 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         marginRight: 15,
         marginBottom: 20,
-        maxWidth: '80%',
+        width: '80%',
         position: 'relative'
     },
     sender: {
         padding: 15,
         backgroundColor: '#2B68E6',
-        alignSelf: 'flex-start',
+        // alignSelf: 'flex-start',
         borderRadius: 20,
         margin: 15,
-        maxWidth: '80%',
+        width: '80%',
         position: 'relative'
     },
     senderText: {
