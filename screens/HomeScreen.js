@@ -89,7 +89,7 @@ const HomeScreen = () =>
     const enterChat = (id, chatName, users) =>
     {
 
-        navigation.navigate('Chat', { chatName: getRecipientEmail(users, auth.currentUser.email) || chatName, id, })
+        navigation.navigate('Chat', { chatName: users.length <= 2 && getRecipientEmail(users, auth.currentUser.email) || chatName, id, })
     }
 
     return (

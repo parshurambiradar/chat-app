@@ -11,6 +11,7 @@ const AddChatScreen = () =>
     const navigation = useNavigation()
     const [input, setInput] = useState('')
     const [users, setUsers] = useState([]);
+    const [selectedUsers, setSelectedUsers] = useState([]);
 
     useLayoutEffect(() =>
     {
@@ -46,7 +47,7 @@ const AddChatScreen = () =>
     //     }
 
     // }
-    const createChat = async (id, chatName, email, photoURL) =>
+    const createChat = async (id, chatName, email, photoURL,) =>
     {
         try
         {
@@ -64,7 +65,7 @@ const AddChatScreen = () =>
             {
                 await addDoc(collection(db, 'chats'), {
                     chatName: chatName ? chatName : input,
-                    users: [auth.currentUser.email, email ? email : ''],
+                    users: [auth.currentUser.email, email ? email : '', ...selectedUsers],
                     createdAt: serverTimestamp(),
 
                 });
@@ -93,7 +94,7 @@ const AddChatScreen = () =>
                         onSubmitEditing={() => createChat()} />
                     <Button disabled={!input} title={'Create new Chat'} onPress={() => createChat()} />
                 </View>
-                <ScrollView style={{ height: '100%' }}>
+                <ScrollView style={{ height: '100%' }} keyboardShouldPersistTaps={'always'}>
                     {
                         users.map(({ id, data: { username, photoURL, email } }) =>
                         {
@@ -102,7 +103,11 @@ const AddChatScreen = () =>
                                 <UserListItem key={id} id={id} username={username}
                                     photoURL={photoURL}
                                     email={email}
-                                    createChat={createChat} />
+                                    createChat={createChat}
+                                    input={input}
+                                    setSelectedUsers={setSelectedUsers}
+                                    
+                                />
                         }
                         )
                     }

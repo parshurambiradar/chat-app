@@ -18,7 +18,7 @@ const ChatScreen = () =>
     console.log(chatName, id, email, photoURL)
     const [input, setInput] = useState('')
     const [messages, setMessages] = useState([])
-
+    const dates = new Set();
 
     const scrollViewRef = useRef()
 
@@ -53,12 +53,12 @@ const ChatScreen = () =>
                     {/* <TouchableOpacity>
                         <FontAwesome name='video-camera' size={24} color="white" />
                     </TouchableOpacity> */}
-                    <TouchableOpacity onPress={pickDocument}>
+                    {/* <TouchableOpacity onPress={pickDocument}>
                         <FontAwesome5 name='file-upload' size={24} color="white" />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={pickImage}>
                         <Ionicons name='attach' size={24} color="white" />
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                 </View>
             )
         })
@@ -68,39 +68,7 @@ const ChatScreen = () =>
 
 
 
-    // const sendMessage = async () =>
-    // {
 
-    //     try
-    //     {
-    //         Keyboard.dismiss();
-    //         // const docref = doc(collection(db, 'chats'));
-    //         // const colref = collection(docref, 'messages');
-    //         // await addDoc(colref, {
-    //         //     message: input,
-    //         //     timestamp: serverTimestamp(),
-    //         //     displayName: auth.currentUser.displayName,
-    //         //     email: auth.currentUser.email,
-    //         //     photoURL: auth.currentUser.photoURL
-    //         // });
-
-    //         const messagesRef = collection(db, "chats", id, "messages")
-    //         await addDoc(messagesRef, {
-    //             message: input,
-    //             timestamp: serverTimestamp(),
-    //             displayName: auth.currentUser.displayName,
-    //             email: auth.currentUser.email,
-    //             photoURL: auth.currentUser.photoURL
-    //         })
-
-
-    //         setInput('');
-
-    //     } catch (e)
-    //     {
-    //         console.error("Error adding document: ", e);
-    //     }
-    // }
 
     // const downloadFile = async (uri, filename) =>
     // {
@@ -181,6 +149,8 @@ const ChatScreen = () =>
             {
                 let source = result?.assets[0]?.uri;
                 let type = result?.assets[0]?.type || 'image';
+
+
                 let filename = source.split("/");
                 filename = filename[filename.length - 1];
                 const response = await fetch(source);
@@ -272,28 +242,19 @@ const ChatScreen = () =>
 
     }, []);
 
-    const openChat = () =>
+    const renderDate = (date) =>
     {
 
+
+        if (date)
+        {
+            dates.add(date)
+            return < >
+                <Text style={{ color: '#ffffff', padding: 10, borderRadius: 10, backgroundColor: 'grey', alignSelf: 'center', marginVertical: 10 }}>{date}</Text>
+            </>
+        }
     }
-    // useLayoutEffect(() =>
-    // {
-    //     let unsubscribe;
-    //     const liveUpdate = async () =>
-    //     {
-    //         const messagesRef = collection(db, "chats", id, "messages")
-    //         const queryObj = query(messagesRef, orderBy("timestamp", 'desc'));
-    //         unsubscribe = onSnapshot(queryObj, (querySnapshot) =>
-    //         {
-
-    //             setMessages(querySnapshot.docs.map((doc) => ({ id: doc.id, data: doc.data() })
-    //             ));
-
-    //         });
-    //     }
-    //     liveUpdate()
-    //     return unsubscribe;
-    // }, [chatName, id])
+    console.log(dates)
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} >
             <StatusBar style='light' />
@@ -318,6 +279,8 @@ const ChatScreen = () =>
                             {
                                 let reciever = email === auth.currentUser.email ? true : false;
                                 let msg;
+
+                                let date = timestamp && format(new Date(timestamp?.toDate()), 'dd/MM/yyyy')
                                 switch (type)
                                 {
                                     case 'image':
@@ -359,8 +322,13 @@ const ChatScreen = () =>
                                 }
 
                                 return (
-                                    <View key={id} style={styles[reciever ? 'reciever' : 'sender']}>
-                                        {/* {reciever ? <Avatar
+                                    <View key={id}>
+                                        {
+                                            dates.has(date) ? null : renderDate(date)
+                                        }
+
+                                        <View style={styles[reciever ? 'reciever' : 'sender']}>
+                                            {/* {reciever ? <Avatar
                                             rounded
 
                                             //web
@@ -389,13 +357,13 @@ const ChatScreen = () =>
                                             left={5}
                                             source={{ uri: photoURL }}
                                         />} */}
+                                            {auth.currentUser.displayName !== username && <Text style={{ color: !reciever ? 'white' : 'black', marginBottom: 2 }}>{username}</Text>}
+                                            {msg}
+                                            {timestamp && <Text style={{ color: !reciever ? 'white' : 'black', alignSelf: 'flex-end', paddingTop: 2, marginLeft: 5 }}>{format(new Date(timestamp?.toDate()), 'hh:mm a')}</Text>}
 
-                                        {msg}
-                                        {timestamp && <Text style={{ color: !reciever ? 'white' : 'black', alignSelf: 'flex-end', paddingTop: 2, marginLeft: 5 }}>{format(new Date(timestamp?.toDate()), 'hh:mm a')}</Text>}
+                                        </View>
 
                                     </View>
-
-
 
 
 
@@ -405,12 +373,27 @@ const ChatScreen = () =>
 
                         <View style={styles.footer}>
                             <TextInput
-                                placeholder='Signal Message' style={styles.textInput}
+                                placeholder='Signal Message' style={[styles.textInput, {
+
+                                }]}
+
                                 value={input}
                                 onChangeText={text => setInput(text)}
                                 onSubmitEditing={() => input && sendMessage()}
 
                             />
+                            <TouchableOpacity onPress={pickDocument} style={{ position: 'absolute', right: input ? 160 : 130 }}>
+                                <Ionicons name='attach' size={24} color="white" />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={pickImage} style={{ position: 'absolute', right: input ? 120 : 90 }}>
+                                <Ionicons name='images' size={24} color="white" />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() =>
+                            {
+                                navigation.navigate('ImageCapture', { id })
+                            }} style={{ position: 'absolute', right: input ? 70 : 50 }}>
+                                <Ionicons name='camera' size={24} color="white" />
+                            </TouchableOpacity>
                             {input && <TouchableOpacity
                                 disabled={!input}
                                 activeOpacity={0.5}

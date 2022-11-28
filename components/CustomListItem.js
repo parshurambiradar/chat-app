@@ -20,7 +20,7 @@ const CustomListItem = ({ id, chatName, enterChat, users, }) =>
             />
             <ListItem.Content >
                 <ListItem.Title style={{ fontWeight: "800" }}>
-                    {getRecipientEmail(users, auth.currentUser.email) || chatName}
+                    {users.length <= 2 && getRecipientEmail(users, auth.currentUser.email) || chatName}
                 </ListItem.Title>
                 <ListItem.Subtitle
                     numberOfLines={1}
