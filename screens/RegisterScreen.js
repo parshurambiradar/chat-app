@@ -1,10 +1,9 @@
 import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native'
 import React, { useLayoutEffect, useState } from 'react'
-import { } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import { Button, Input, Text } from '@rneui/themed'
 import { useNavigation } from '@react-navigation/native'
-import { auth, createUserWithEmailAndPassword, updateProfile,setDoc } from '../firebase'
+import { auth, serverTimestamp, createUserWithEmailAndPassword, updateProfile, setDoc, db, doc, addDoc, collection } from '../firebase'
 
 
 const RegisterScreen = () =>
@@ -20,23 +19,21 @@ const RegisterScreen = () =>
     {
         try
         {
-            const userCredential = await createUserWithEmailAndPassword(
+            await createUserWithEmailAndPassword(
                 auth,
                 email,
                 password
             );
-             await updateProfile(auth.currentUser, {
+            await updateProfile(auth.currentUser, {
                 displayName: name,
                 photoURL: imageUrl || 'https://st4.depositphotos.com/4329009/19956/v/600/depositphotos_199564354-stock-illustration-creative-vector-illustration-default-avatar.jpg',
             });
 
-            const user = userCredential.user;
-
-            setDoc(doc(db, "users", user.uid), {
+            await addDoc(collection(db, "users"), {
                 username: name,
                 email: email,
-                userId: user.uid,
-                timestamp: new Date(),
+                photoURL: imageUrl || 'https://st4.depositphotos.com/4329009/19956/v/600/depositphotos_199564354-stock-illustration-creative-vector-illustration-default-avatar.jpg',
+                timestamp: serverTimestamp(),
             })
         } catch (err)
         {

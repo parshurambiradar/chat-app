@@ -3,6 +3,7 @@
     "name": "signal-clone-yt",
     "slug": "signal-clone-yt",
     "version": "1.0.0",
+    "scheme": "signal-clone-yt",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -18,16 +19,56 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier":"com.batabhilash.signalcloneyt",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Allow signal-clone-yt to access your photos.",
+        "NSPhotoLibraryAddUsageDescription": "Allow signal-clone-yt to save photos."
+      }
     },
     "android": {
+     
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_MEDIA_LOCATION"
+      ],
+      "package": "com.batabhilash.signalcloneyt"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends."
+        }
+      ],
+      [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow signal-clone-yt to access your photos.",
+          "savePhotosPermission": "Allow signal-clone-yt to save photos.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "23f05b63-ef29-4abb-9a4d-e85ee8962bb0"
+      }
     }
   }
 }
