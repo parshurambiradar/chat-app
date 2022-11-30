@@ -63,9 +63,14 @@ const AddChatScreen = () =>
             let find = chats.docs.find((doc) => doc.data().users.includes(email) && doc.data().users.includes(auth.currentUser.email))
             if (!find)
             {
+                let users = [auth.currentUser.email, ...selectedUsers]
+                if (email)
+                {
+                    users.push(email)
+                }
                 await addDoc(collection(db, 'chats'), {
                     chatName: chatName ? chatName : input,
-                    users: [auth.currentUser.email, email ? email : '', ...selectedUsers],
+                    users: users,
                     createdAt: serverTimestamp(),
 
                 });
@@ -92,7 +97,7 @@ const AddChatScreen = () =>
                         leftIcon={<Icon name="wechat" type="antdesign" size={24} color="black" />}
 
                         onSubmitEditing={() => createChat()} />
-                    <Button disabled={selectedUsers.length===0} title={'Create new Chat'} onPress={() => createChat()} />
+                    <Button disabled={selectedUsers.length === 0} title={'Create new Chat'} onPress={() => createChat()} />
                 </View>
                 <ScrollView style={{ height: '100%' }} keyboardShouldPersistTaps={'always'}>
                     {
@@ -106,7 +111,7 @@ const AddChatScreen = () =>
                                     createChat={createChat}
                                     input={input}
                                     setSelectedUsers={setSelectedUsers}
-                                    
+
                                 />
                         }
                         )

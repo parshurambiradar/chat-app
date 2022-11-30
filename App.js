@@ -6,6 +6,7 @@ import HomeScreen from './screens/HomeScreen';
 import ImageCapture from './screens/ImageCapture';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
+import UserProfileScreen from './screens/UserProfileScreen';
 
 const Stack = createNativeStackNavigator();
 const globalScreenOptions = {
@@ -29,6 +30,7 @@ const App = () =>
         <Stack.Screen name='AddChat' component={AddChatScreen} />
         <Stack.Screen name='Chat' component={ChatScreen} />
         <Stack.Screen name='ImageCapture' component={ImageCapture} />
+        <Stack.Screen name='UserProfile' component={UserProfileScreen} />
       </Stack.Navigator>
 
     </NavigationContainer>

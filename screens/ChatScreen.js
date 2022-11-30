@@ -1,9 +1,9 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Avatar, Image, Input, Text, Tab, TabView, SearchBar } from '@rneui/themed';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, TouchableWithoutFeedback, Linking, Alert, FlatList } from 'react-native'
+import { Keyboard, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, TouchableWithoutFeedback, Linking, Alert, FlatList, Pressable } from 'react-native'
 import { FontAwesome, Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons'
-import { addDoc, db, serverTimestamp, auth, doc, collection, onSnapshot, orderBy, query, ref, uploadBytes, getStorage, getDownloadURL } from '../firebase'
+import { addDoc, db, serverTimestamp, auth, doc, collection, onSnapshot, orderBy, query, ref, uploadBytes, getStorage, getDownloadURL, where, updateDoc, arrayRemove, getDoc } from '../firebase'
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -11,15 +11,21 @@ import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import { format } from 'date-fns';
 import Autolink from 'react-native-autolink';
+
+
+
 const ChatScreen = () =>
 {
     const navigation = useNavigation();
-    const { params: { chatName, id, email, photoURL } } = useRoute();
-    console.log(chatName, id, email, photoURL)
+    const { params: { chatName, id, email, photoURL, users, isGroupChat } } = useRoute();
+    console.log(id)
     const [input, setInput] = useState('')
     const [messages, setMessages] = useState([])
     const dates = new Set();
-
+    const [modalVisible, setModalVisible] = useState(false);
+    const [active, setActive] = useState(true);
+    const [members, setMembers] = useState([])
+    const [filteredUsers, setFilteredUsers] = useState([]);
     const scrollViewRef = useRef()
 
 
@@ -45,14 +51,17 @@ const ChatScreen = () =>
                 <View style={{
                     flexDirection: 'row',
                     justifyContent: 'space-between',
+                    width: '20%',
 
-                    width: 80,
-                    marginRight: 20
+
                 }}>
 
-                    {/* <TouchableOpacity>
-                        <FontAwesome name='video-camera' size={24} color="white" />
-                    </TouchableOpacity> */}
+                    {isGroupChat && active && <TouchableOpacity
+                        onPress={exitFromChat}
+                        style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name={'exit-outline'} size={24} color="white" />
+                        <Text style={{ color: 'red', marginLeft: 5 }}>Exit</Text>
+                    </TouchableOpacity>}
                     {/* <TouchableOpacity onPress={pickDocument}>
                         <FontAwesome5 name='file-upload' size={24} color="white" />
                     </TouchableOpacity>
@@ -64,11 +73,46 @@ const ChatScreen = () =>
         })
 
 
-    }, [navigation, messages])
+    }, [navigation, messages, active])
+
+    const exitFromChat = async () =>
+    {
+        try
+        {
+            const docRef = doc(db, 'chats', id);
+            const result = await updateDoc(docRef, {
+                users: arrayRemove(auth.currentUser.email)
+            });
+            setFilteredUsers(filteredUsers.map(user => user.email !== auth.currentUser.email))
+            setActive(false)
+        } catch (error)
+        {
+            console.log(error);
+        }
+    }
 
 
-
-
+    const getUserSuggestions = (keyword) =>
+    {
+        if (Array.isArray(users))
+        {
+            if (keyword.slice(1) === '')
+            {
+                setFilteredUsers([...users]);
+            } else
+            {
+                const userDataList = users.filter(
+                    (obj) => obj.username.toLowerCase().indexOf(keyword.slice(1)) !== -1
+                );
+                setFilteredUsers([...userDataList]);
+            }
+        }
+    };
+    const handleMention = (username) =>
+    {
+        setInput((current) => current.slice(0, current.lastIndexOf('@') + 1) + username + ' ');
+        setModalVisible(false);
+    };
 
     // const downloadFile = async (uri, filename) =>
     // {
@@ -210,7 +254,7 @@ const ChatScreen = () =>
             console.log(error);
         } finally
         {
-
+            modalVisible && setModalVisible(false)
             input && setInput("");
         }
 
@@ -242,6 +286,34 @@ const ChatScreen = () =>
         return unsub;
 
     }, []);
+    useEffect(() =>
+    {
+
+        (async () =>
+        {
+            const docRef = doc(db, 'chats', id);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists())
+            {
+                setMembers(docSnap.data().users)
+                setFilteredUsers(
+                    docSnap.data().users
+                        .map((user, index) => ({ email: user, username: user.substring(0, user.indexOf('@')), id: index.toString() }))
+                        .filter(user => user.email != auth.currentUser.email))
+                // console.log("Document data:", docSnap.data());
+            } else
+            {
+                // doc.data() will be undefined in this case
+                console.log("No such document!");
+            }
+
+
+        })()
+
+
+
+    }, []);
 
     const renderDate = (date) =>
     {
@@ -255,14 +327,47 @@ const ChatScreen = () =>
             </>
         }
     }
-    const handleText = (text) =>
+    const handleText = (value) =>
     {
 
-        setInput(text)
-        // if (text.endsWith('@'))
-        // {
-        //     alert('metion')
-        // }
+        setInput(value);
+        if (isGroupChat)
+        {
+            const lastChar = value.substr(value.length - 1);
+            const currentChar = value.substr(value.length - 1);
+            const spaceCheck = /[^@A-Za-z_]/g;
+
+
+            if (value.length === 0)
+            {
+                setModalVisible(false);
+            } else
+            {
+                if (spaceCheck.test(lastChar) && currentChar != '@')
+                {
+                    setModalVisible(false);
+                } else
+                {
+                    const checkSpecialChar = currentChar.match(/[^@A-Za-z_]/);
+                    if (checkSpecialChar === null || currentChar === '@')
+                    {
+                        const pattern = new RegExp(`\\B@[a-z0-9_-]+|\\B@`, `gi`);
+                        const matches = value.match(pattern) || [];
+                        if (matches.length > 0)
+                        {
+                            getUserSuggestions(matches[matches.length - 1]);
+                            if (value.endsWith('@')) setModalVisible(true);
+                        } else
+                        {
+                            setModalVisible(false);
+                        }
+                    } else if (checkSpecialChar != null)
+                    {
+                        setModalVisible(false);
+                    }
+                }
+            }
+        }
     }
 
     return (
@@ -332,8 +437,8 @@ const ChatScreen = () =>
                                         email
                                         // Optional: enable hashtag linking to instagram
                                         hashtag="instagram"
-                                        // Optional: enable @username linking to twitter
-                                        mention="twitter"
+                                        // // Optional: enable @username linking to twitter
+                                        mention={false}
                                         // Optional: enable phone linking
                                         phone
                                         // Optional: enable URL linking
@@ -342,6 +447,24 @@ const ChatScreen = () =>
                                         // matchers={[MyCustomTextMatcher]}
                                         showAlert
                                         textProps={{ selectable: true }}
+                                        stripPrefix={false}
+                                        matchers={[
+                                            {
+
+                                                pattern: /(^|\W)@\b([-a-zA-Z0-9._]{3,25})\b/g,
+                                                style: { color: 'blue' },
+                                                getLinkText: (replacerArgs) =>
+                                                {
+
+                                                    return `${replacerArgs[0]}`
+                                                },
+                                                onPress: (match) =>
+                                                {
+                                                    console.log(match.getReplacerArgs())
+                                                    navigation.navigate('UserProfile', { userId: match.getReplacerArgs()[2] });
+                                                },
+                                            },
+                                        ]}
                                     />
 
 
@@ -384,7 +507,7 @@ const ChatScreen = () =>
                                             left={5}
                                             source={{ uri: photoURL }}
                                         />} */}
-                                            {auth.currentUser.displayName !== username && <Text style={{ color: !reciever ? 'black' : 'black', marginBottom: 2 }}>{username}</Text>}
+                                            {auth.currentUser.displayName !== username && <Text style={{ color: 'blue', marginBottom: 2 }}>{username}</Text>}
                                             {msg}
                                             {timestamp && <Text style={{ color: !reciever ? 'black' : 'black', alignSelf: 'flex-end', paddingTop: 2, marginLeft: 5 }}>{format(new Date(timestamp?.toDate()), 'hh:mm a')}</Text>}
 
@@ -398,7 +521,30 @@ const ChatScreen = () =>
                             })}
                         </ScrollView>
 
-                        <View style={styles.footer}>
+                        {modalVisible && (
+                            <View style={{ position: 'absolute', bottom: 50, width: '90%' }}>
+                                <View style={styles.modalView}>
+                                    <FlatList
+                                        keyboardShouldPersistTaps={'always'}
+                                        keyExtractor={({ id }) => id}
+                                        showsVerticalScrollIndicator={false}
+                                        data={filteredUsers}
+                                        renderItem={({ item: { username } }) => (
+                                            <Pressable
+                                                onPress={() => handleMention(username)}
+                                                style={{ marginVertical: 6, backgroundColor: '#f8f8f8' }}>
+                                                <View style={{ flexDirection: 'row', padding: 10, alignItems: 'center', }}>
+                                                    <Avatar size={30} source={{ uri: 'https://st4.depositphotos.com/4329009/19956/v/600/depositphotos_199564354-stock-illustration-creative-vector-illustration-default-avatar.jpg' }} />
+                                                    <Text style={{ marginLeft: 10, fontSize: 14, fontWeight: '700' }}>{username}</Text>
+                                                </View>
+                                            </Pressable>
+                                        )}
+                                    />
+                                </View>
+                            </View>
+                        )}
+
+                        {active && <View style={styles.footer}>
                             <TextInput
                                 placeholder='Signal Message' style={[styles.textInput, {
 
@@ -417,7 +563,7 @@ const ChatScreen = () =>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={() =>
                             {
-                                // navigation.navigate('ImageCapture', { id })
+                                navigation.navigate('ImageCapture', { id })
                             }} style={{ position: 'absolute', right: input ? 70 : 50 }}>
                                 <Ionicons name='camera' size={24} color="black" />
                             </TouchableOpacity>
@@ -428,7 +574,7 @@ const ChatScreen = () =>
                             >
                                 <Ionicons name='send' size={24} color={!input ? 'grey' : '#2B68E6'} />
                             </TouchableOpacity>}
-                        </View>
+                        </View>}
 
 
 
@@ -505,6 +651,21 @@ const styles = StyleSheet.create({
         color: 'gray',
         borderRadius: 30
     },
-
+    modalView: {
+        marginHorizontal: 20,
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 5,
+        // alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+        maxHeight: 200,
+    },
 
 })

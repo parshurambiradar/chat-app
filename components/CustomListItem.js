@@ -3,6 +3,7 @@ import { Avatar, ListItem, Text } from '@rneui/themed'
 import { useEffect, useState } from 'react';
 import { collection, db, query, orderBy, onSnapshot, auth } from '../firebase'
 import getRecipientEmail from '../utils/getRecipientEmail';
+import getGroupChat from '../utils/getGroupChat';
 const CustomListItem = ({ id, chatName, enterChat, users, }) =>
 {
 
@@ -20,7 +21,7 @@ const CustomListItem = ({ id, chatName, enterChat, users, }) =>
             />
             <ListItem.Content >
                 <ListItem.Title style={{ fontWeight: "800" }}>
-                    {users.length <= 2 && getRecipientEmail(users, auth.currentUser.email) || chatName}
+                    {getGroupChat(users, auth.currentUser.email) ? chatName : getRecipientEmail(users, auth.currentUser.email)}
                 </ListItem.Title>
                 <ListItem.Subtitle
                     numberOfLines={1}

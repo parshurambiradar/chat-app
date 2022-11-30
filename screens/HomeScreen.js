@@ -4,16 +4,16 @@ import { useEffect, useLayoutEffect, useState } from 'react'
 import { Platform, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { } from 'react-native-safe-area-context'
 import CustomListItem from '../components/CustomListItem'
-import { auth, db, collection, getDocs, onSnapshot, query, orderBy } from '../firebase'
+import { auth, db, collection, getDocs, onSnapshot, query, orderBy, where } from '../firebase'
 import { AntDesign, SimpleLineIcons } from '@expo/vector-icons'
-import { where } from 'firebase/firestore'
+
 import getRecipientEmail from '../utils/getRecipientEmail'
+import getGroupChat from '../utils/getGroupChat'
 const HomeScreen = () =>
 {
     const navigation = useNavigation();
     const [chats, setChats] = useState([])
 
-    const isFocused = useIsFocused()
 
     useEffect(() =>
     {
@@ -89,7 +89,9 @@ const HomeScreen = () =>
     const enterChat = (id, chatName, users) =>
     {
 
-        navigation.navigate('Chat', { chatName: users.length <= 2 && getRecipientEmail(users, auth.currentUser.email) || chatName, id, })
+        let isGroupChat = getGroupChat(users, auth.currentUser.email);
+
+        navigation.navigate('Chat', { chatName: isGroupChat ? chatName : getRecipientEmail(users, auth.currentUser.email), id, isGroupChat })
     }
 
     return (
