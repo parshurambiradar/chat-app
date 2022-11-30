@@ -92,7 +92,7 @@ const AddChatScreen = () =>
                         leftIcon={<Icon name="wechat" type="antdesign" size={24} color="black" />}
 
                         onSubmitEditing={() => createChat()} />
-                    <Button disabled={!input} title={'Create new Chat'} onPress={() => createChat()} />
+                    <Button disabled={selectedUsers.length===0} title={'Create new Chat'} onPress={() => createChat()} />
                 </View>
                 <ScrollView style={{ height: '100%' }} keyboardShouldPersistTaps={'always'}>
                     {

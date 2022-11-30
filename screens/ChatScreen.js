@@ -10,7 +10,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import { format } from 'date-fns';
-
+import Autolink from 'react-native-autolink';
 const ChatScreen = () =>
 {
     const navigation = useNavigation();
@@ -178,6 +178,7 @@ const ChatScreen = () =>
     {
         try
         {
+            input && Keyboard.dismiss()
 
             let doc = {
                 message: fileurl || input,
@@ -209,7 +210,7 @@ const ChatScreen = () =>
             console.log(error);
         } finally
         {
-            input && Keyboard.dismiss()
+
             input && setInput("");
         }
 
@@ -254,7 +255,16 @@ const ChatScreen = () =>
             </>
         }
     }
-    console.log(dates)
+    const handleText = (text) =>
+    {
+
+        setInput(text)
+        // if (text.endsWith('@'))
+        // {
+        //     alert('metion')
+        // }
+    }
+
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} >
             <StatusBar style='light' />
@@ -293,29 +303,46 @@ const ChatScreen = () =>
                                         break;
                                     case 'application':
 
-                                        msg = <View
+                                    // msg = <View
 
-                                            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-                                        >
-                                            <Text
-                                                onPress={async () =>
-                                                {
-                                                    let res = await Linking.canOpenURL(message)
-                                                    if (res)
-                                                    {
-                                                        Linking.openURL(message)
-                                                    }
-                                                }}
-                                                numberOfLines={3}
-                                                style={[styles[reciever ? 'recieverText' : 'senderText'], { width: '80%' }]}>{filename}</Text>
-                                            {/* {
-                                                !reciever && <MaterialCommunityIcons
-                                                    onPress={() => downloadFile(message, filename)}
-                                                    name='download-circle-outline' size={30} color='white' />} */}
-                                        </View>
-                                        break;
+                                    //     style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                                    // >
+                                    //     <Text
+                                    //         onPress={async () =>
+                                    //         {
+                                    //             let res = await Linking.canOpenURL(message)
+                                    //             if (res)
+                                    //             {
+                                    //                 Linking.openURL(message)
+                                    //             }
+                                    //         }}
+                                    //         numberOfLines={3}
+                                    //         style={[styles[reciever ? 'recieverText' : 'senderText'], { width: '80%' }]}>{message}</Text>
+                                    //     {/* {
+                                    //         !reciever && <MaterialCommunityIcons
+                                    //             onPress={() => downloadFile(message, filename)}
+                                    //             name='download-circle-outline' size={30} color='white' />} */}
+                                    // </View>
+                                    // break;
 
-                                    default: msg = <Text selectable style={styles[reciever ? 'recieverText' : 'senderText']}>{message}</Text>
+                                    default: msg = <Autolink
+                                        // Required: the text to parse for links
+                                        text={message}
+                                        // Optional: enable email linking
+                                        email
+                                        // Optional: enable hashtag linking to instagram
+                                        hashtag="instagram"
+                                        // Optional: enable @username linking to twitter
+                                        mention="twitter"
+                                        // Optional: enable phone linking
+                                        phone
+                                        // Optional: enable URL linking
+                                        url
+                                        // Optional: custom linking matchers
+                                        // matchers={[MyCustomTextMatcher]}
+                                        showAlert
+                                        textProps={{ selectable: true }}
+                                    />
 
 
                                         break;
@@ -357,9 +384,9 @@ const ChatScreen = () =>
                                             left={5}
                                             source={{ uri: photoURL }}
                                         />} */}
-                                            {auth.currentUser.displayName !== username && <Text style={{ color: !reciever ? 'white' : 'black', marginBottom: 2 }}>{username}</Text>}
+                                            {auth.currentUser.displayName !== username && <Text style={{ color: !reciever ? 'black' : 'black', marginBottom: 2 }}>{username}</Text>}
                                             {msg}
-                                            {timestamp && <Text style={{ color: !reciever ? 'white' : 'black', alignSelf: 'flex-end', paddingTop: 2, marginLeft: 5 }}>{format(new Date(timestamp?.toDate()), 'hh:mm a')}</Text>}
+                                            {timestamp && <Text style={{ color: !reciever ? 'black' : 'black', alignSelf: 'flex-end', paddingTop: 2, marginLeft: 5 }}>{format(new Date(timestamp?.toDate()), 'hh:mm a')}</Text>}
 
                                         </View>
 
@@ -378,21 +405,21 @@ const ChatScreen = () =>
                                 }]}
 
                                 value={input}
-                                onChangeText={text => setInput(text)}
+                                onChangeText={text => handleText(text)}
                                 onSubmitEditing={() => input && sendMessage()}
 
                             />
                             <TouchableOpacity onPress={pickDocument} style={{ position: 'absolute', right: input ? 160 : 130 }}>
-                                <Ionicons name='attach' size={24} color="white" />
+                                <Ionicons name='attach' size={24} color="black" />
                             </TouchableOpacity>
                             <TouchableOpacity onPress={pickImage} style={{ position: 'absolute', right: input ? 120 : 90 }}>
-                                <Ionicons name='images' size={24} color="white" />
+                                <Ionicons name='images' size={24} color="black" />
                             </TouchableOpacity>
                             <TouchableOpacity onPress={() =>
                             {
-                                navigation.navigate('ImageCapture', { id })
+                                // navigation.navigate('ImageCapture', { id })
                             }} style={{ position: 'absolute', right: input ? 70 : 50 }}>
-                                <Ionicons name='camera' size={24} color="white" />
+                                <Ionicons name='camera' size={24} color="black" />
                             </TouchableOpacity>
                             {input && <TouchableOpacity
                                 disabled={!input}
@@ -435,7 +462,7 @@ const styles = StyleSheet.create({
     },
     sender: {
         padding: 15,
-        backgroundColor: '#2B68E6',
+        backgroundColor: '#ECECEC',
         // alignSelf: 'flex-start',
         borderRadius: 20,
         margin: 15,
@@ -443,7 +470,7 @@ const styles = StyleSheet.create({
         position: 'relative'
     },
     senderText: {
-        color: 'white',
+        color: 'black',
         fontWeight: '500',
         marginLeft: 10,
         marginBottom: 15
