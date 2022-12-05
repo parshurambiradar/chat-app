@@ -1,5 +1,5 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Avatar, Image, Input, Text, Tab, TabView, SearchBar } from '@rneui/themed';
+import { Avatar, Image, Input, Text, Tab, TabView, SearchBar, Overlay } from '@rneui/themed';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Keyboard, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, TouchableWithoutFeedback, Linking, Alert, FlatList, Pressable } from 'react-native'
 import { FontAwesome, Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons'
@@ -27,6 +27,12 @@ const ChatScreen = () =>
     const [members, setMembers] = useState([])
     const [filteredUsers, setFilteredUsers] = useState([]);
     const scrollViewRef = useRef()
+    const [visible, setVisible] = useState(false);
+
+    const toggleOverlay = () =>
+    {
+        setVisible(!visible);
+    };
 
 
     useLayoutEffect(() =>
@@ -56,12 +62,12 @@ const ChatScreen = () =>
 
                 }}>
 
-                    {isGroupChat && active && <TouchableOpacity
-                        onPress={exitFromChat}
+                    <TouchableOpacity
+                        onPress={toggleOverlay}
                         style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Ionicons name={'exit-outline'} size={24} color="white" />
-                        <Text style={{ color: 'red', marginLeft: 5 }}>Exit</Text>
-                    </TouchableOpacity>}
+                        <Ionicons name={'ellipsis-vertical'} size={24} color="white" />
+
+                    </TouchableOpacity>
                     {/* <TouchableOpacity onPress={pickDocument}>
                         <FontAwesome5 name='file-upload' size={24} color="white" />
                     </TouchableOpacity>
@@ -79,6 +85,7 @@ const ChatScreen = () =>
     {
         try
         {
+            setVisible(false)
             const docRef = doc(db, 'chats', id);
             const result = await updateDoc(docRef, {
                 users: arrayRemove(auth.currentUser.email)
@@ -143,7 +150,9 @@ const ChatScreen = () =>
         try
         {
             let result = await DocumentPicker.getDocumentAsync({
-                // type: "application/pdf",
+                type: "application/pdf",
+                multiple: true
+
             });
             console.log(result)
             if (result !== null)
@@ -151,6 +160,7 @@ const ChatScreen = () =>
 
                 let type = result.mimeType.split('/')[0]
                 let uri = result.uri
+                // let filename=result.name
                 let filename = uri.split("/");
                 filename = filename[filename.length - 1];
                 const r = await fetch(uri);
@@ -182,36 +192,40 @@ const ChatScreen = () =>
 
             let result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
+                // allowsEditing: true,
                 aspect: [5, 4],
                 quality: 1,
+                allowsMultipleSelection: true
             });
 
             console.log(result);
 
             if (!result.canceled)
             {
-                let source = result?.assets[0]?.uri;
-                let type = result?.assets[0]?.type || 'image';
+                result.assets.forEach(async (image) =>
+                {
+                    let source = image?.uri;
+                    let type = image?.type || 'image';
 
 
-                let filename = source.split("/");
-                filename = filename[filename.length - 1];
-                const response = await fetch(source);
-                let blob = await response.blob();
-                // remove last slash from local file path
-                source = source.substring(source.lastIndexOf('/') + 1);
+                    let filename = source.split("/");
+                    filename = filename[filename.length - 1];
+                    const response = await fetch(source);
+                    let blob = await response.blob();
+                    // remove last slash from local file path
+                    source = source.substring(source.lastIndexOf('/') + 1);
 
-                // create a file ref
-                const fileRef = ref(getStorage(), source);
+                    // create a file ref
+                    const fileRef = ref(getStorage(), source);
 
-                //upload image to firebase storage 
-                await uploadBytes(fileRef, blob,);
+                    //upload image to firebase storage 
+                    await uploadBytes(fileRef, blob,);
 
-                //get image url
-                let fileurl = await getDownloadURL(fileRef);
-                //save image url as text in message field
-                await sendMessage(fileurl, type, filename)
+                    //get image url
+                    let fileurl = await getDownloadURL(fileRef);
+                    //save image url as text in message field
+                    await sendMessage(fileurl, type, filename)
+                })
             }
         } catch (error)
         {
@@ -408,27 +422,27 @@ const ChatScreen = () =>
                                         break;
                                     case 'application':
 
-                                    // msg = <View
+                                        msg = <View
 
-                                    //     style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-                                    // >
-                                    //     <Text
-                                    //         onPress={async () =>
-                                    //         {
-                                    //             let res = await Linking.canOpenURL(message)
-                                    //             if (res)
-                                    //             {
-                                    //                 Linking.openURL(message)
-                                    //             }
-                                    //         }}
-                                    //         numberOfLines={3}
-                                    //         style={[styles[reciever ? 'recieverText' : 'senderText'], { width: '80%' }]}>{message}</Text>
-                                    //     {/* {
-                                    //         !reciever && <MaterialCommunityIcons
-                                    //             onPress={() => downloadFile(message, filename)}
-                                    //             name='download-circle-outline' size={30} color='white' />} */}
-                                    // </View>
-                                    // break;
+                                            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                                        >
+                                            <Text
+                                                onPress={async () =>
+                                                {
+                                                    let res = await Linking.canOpenURL(message)
+                                                    if (res)
+                                                    {
+                                                        Linking.openURL(message)
+                                                    }
+                                                }}
+                                               
+                                                style={[styles[reciever ? 'recieverText' : 'senderText'], { width: '80%',textDecorationLine: 'underline', color: 'blue'  }]}>{message}</Text>
+                                            {/* {
+                                            !reciever && <MaterialCommunityIcons
+                                                onPress={() => downloadFile(message, filename)}
+                                                name='download-circle-outline' size={30} color='white' />} */}
+                                        </View>
+                                        break;
 
                                     default: msg = <Autolink
                                         // Required: the text to parse for links
@@ -578,7 +592,26 @@ const ChatScreen = () =>
 
 
 
+                        <Overlay
+                            overlayStyle={{
+                                position: 'absolute',
+                                right: 10,
+                                top: 60,
+                                width: '50%',
+                            }}
+                            isVisible={visible}
+                            onBackdropPress={toggleOverlay}>
+                            <View>
+                                <TouchableOpacity >
 
+                                    <Text style={styles.label} numberOfLines={1}>Mute Notifications</Text>
+                                </TouchableOpacity>
+                                {active && <TouchableOpacity onPress={exitFromChat}>
+                                    <Text style={styles.label} >Exit </Text>
+                                </TouchableOpacity>}
+                            </View>
+
+                        </Overlay>
 
 
 
@@ -667,5 +700,9 @@ const styles = StyleSheet.create({
         elevation: 5,
         maxHeight: 200,
     },
-
+    label: {
+        marginBottom: 10,
+        padding: 10,
+        fontSize: 16
+    }
 })

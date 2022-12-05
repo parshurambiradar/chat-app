@@ -90,8 +90,11 @@ const HomeScreen = () =>
     {
 
         let isGroupChat = getGroupChat(users, auth.currentUser.email);
-
-        navigation.navigate('Chat', { chatName: isGroupChat ? chatName : getRecipientEmail(users, auth.currentUser.email), id, isGroupChat })
+        navigation.navigate('ChatTabs', {
+            screen: 'Discussion',
+            params: { chatName: isGroupChat ? chatName : getRecipientEmail(users, auth.currentUser.email), id, isGroupChat },
+        });
+       // navigation.navigate('ChatTabs', { screen: 'Discussion', params: { chatName: isGroupChat ? chatName : getRecipientEmail(users, auth.currentUser.email), id, isGroupChat } })
     }
 
     return (

@@ -1,5 +1,6 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import ChatTabs from './navigation/ChatTabs';
 import AddChatScreen from './screens/AddChatScreen';
 import ChatScreen from './screens/ChatScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -28,9 +29,12 @@ const App = () =>
         <Stack.Screen name='Register' component={RegisterScreen} />
         <Stack.Screen name='Home' component={HomeScreen} />
         <Stack.Screen name='AddChat' component={AddChatScreen} />
-        <Stack.Screen name='Chat' component={ChatScreen} />
+     
         <Stack.Screen name='ImageCapture' component={ImageCapture} />
         <Stack.Screen name='UserProfile' component={UserProfileScreen} />
+        <Stack.Screen name='ChatTabs' component={ChatTabs}
+          
+        />
       </Stack.Navigator>
 
     </NavigationContainer>
